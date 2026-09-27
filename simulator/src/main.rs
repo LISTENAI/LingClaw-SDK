@@ -1371,6 +1371,12 @@ impl Render for Studio {
             .v_flex()
             .bg(rgb(0x191e24))
             .text_color(rgb(0xe1e7ed))
+            .when(
+                cfg!(target_os = "linux")
+                    && matches!(window.window_decorations(), Decorations::Client { .. })
+                    && !window.is_fullscreen(),
+                |root| root.child(TitleBar::new().child("LingClaw Simulator")),
+            )
             .child(
                 div()
                     .h(px(78.))

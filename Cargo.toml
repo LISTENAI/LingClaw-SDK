@@ -1,0 +1,11 @@
+[workspace]
+members = ["simulator"]
+default-members = ["simulator"]
+resolver = "3"
+
+[profile.release]
+strip = true
+debug = 0
+
+[profile.dev]
+debug = 0

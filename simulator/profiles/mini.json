@@ -1,0 +1,36 @@
+{
+  "name": "Mini",
+  "hardware": {
+    "network": true,
+    "display": {
+      "supported": true,
+      "width_px": 240,
+      "height_px": 240
+    },
+    "input": {
+      "buttons": [
+        {
+          "id": "function",
+          "label": "功能键",
+          "events": [
+            "click"
+          ],
+          "reserved_hold_ms": 3000
+        }
+      ]
+    },
+    "audio": {
+      "speaker": true,
+      "microphone": true
+    },
+    "lighting": {
+      "leds": [
+        {
+          "id": "status",
+          "label": "状态灯",
+          "color": false
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,26 @@
+[package]
+name = "lingclaw-sdk"
+version = "0.1.0"
+edition = "2024"
+publish = false
+rust-version = "1.95"
+description = "Native simulator for LingClaw Lua applications"
+license = "Apache-2.0"
+repository = "https://github.com/LISTENAI/LingClaw-SDK"
+
+[dependencies]
+anyhow = "1"
+chrono = "0.4"
+gpui-kit = "=0.6.6"
+image = { version = "0.25", default-features = false, features = ["png"] }
+mlua = { version = "0.11", features = ["lua54", "vendored", "serialize"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+directories = "6"
+rodio = { version = "0.22.2", default-features = false, features = ["playback"] }
+
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-native-roots"] }
+tokio = { version = "1", features = ["rt-multi-thread", "time", "net"] }
+
+[build-dependencies]
+cc = "1"

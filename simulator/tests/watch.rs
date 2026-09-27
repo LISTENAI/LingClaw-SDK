@@ -1,18 +1,22 @@
 use lingclaw_sdk::watch::{SourceWatch, read_source};
 use std::{
     path::PathBuf,
+    sync::atomic::{AtomicU64, Ordering},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
+static NEXT_SCRATCH_ID: AtomicU64 = AtomicU64::new(0);
+
 struct Scratch(PathBuf);
 impl Scratch {
     fn new() -> Self {
         let path = std::env::temp_dir().join(format!(
-            "lingclaw-watch-{}-{}",
+            "lingclaw-watch-{}-{}-{}",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
-                .as_nanos()
+                .as_nanos(),
+            NEXT_SCRATCH_ID.fetch_add(1, Ordering::Relaxed)
         ));
         std::fs::create_dir(&path).unwrap();
         Self(path)

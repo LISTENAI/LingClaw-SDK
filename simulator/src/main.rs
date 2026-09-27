@@ -1,3 +1,8 @@
+#![cfg_attr(
+    all(target_os = "windows", not(debug_assertions)),
+    windows_subsystem = "windows"
+)]
+
 mod profiles;
 use gpui_kit::assets::IconName as Glyph;
 use gpui_kit::component::{

@@ -1,0 +1,105 @@
+name: Build simulator
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  CARGO_BUILD_JOBS: 2
+  CARGO_TERM_COLOR: always
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            runner: windows-2025
+            target: x86_64-pc-windows-msvc
+            package: windows-x64
+          - name: Windows ARM64
+            runner: windows-11-arm
+            target: aarch64-pc-windows-msvc
+            package: windows-arm64
+          - name: Linux x64
+            runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            package: linux-x64
+          - name: Linux ARM64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            package: linux-arm64
+          - name: macOS Apple Silicon
+            runner: macos-14
+            target: aarch64-apple-darwin
+            package: macos-arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - name: Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config clang cmake ninja-build \
+            libfontconfig1-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libwayland-dev libvulkan-dev libssl-dev libxcb1-dev \
+            libxcb-shape0-dev libxcb-xfixes0-dev libasound2-dev libudev-dev
+      - name: Install Rust
+        run: |
+          rustup toolchain install 1.95.0 --profile minimal --component clippy,rustfmt --target '${{ matrix.target }}'
+          rustc -vV
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: build-${{ matrix.package }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml', 'simulator/**/*.rs', 'simulator/native/**') }}
+          restore-keys: build-${{ matrix.package }}-
+      - run: cargo fmt --check
+      - run: cargo clippy --locked --target '${{ matrix.target }}' --all-targets -- -D warnings
+      - run: cargo test --locked --target '${{ matrix.target }}'
+      - run: cargo build --locked --release --target '${{ matrix.target }}'
+      - name: Headless smoke test
+        run: cargo run --locked --release --target '${{ matrix.target }}' -- --headless examples/counter.lua target/counter.png
+      - name: Package
+        run: python3 scripts/package.py '${{ matrix.package }}' '${{ matrix.target }}'
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: lingclaw-${{ matrix.package }}
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: lingclaw-*
+          merge-multiple: true
+          path: dist
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" --verify-tag --draft --title "LingClaw SDK $TAG" --notes "下载对应系统和架构的模拟器压缩包，解压后运行。每份压缩包包含示例、API 文档和第三方许可。" dist/*

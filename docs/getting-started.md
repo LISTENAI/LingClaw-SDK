@@ -58,23 +58,56 @@ end
 
 ## 上传与拉取
 
-安装 Android Platform Tools，连接支持 ADB 本地调试的设备：
+### 连接设备
+
+安装 [Android Platform Tools](https://developer.android.com/tools/releases/platform-tools)，
+通过 USB 连接支持 ADB 本地调试的设备，确认设备出现在列表中：
 
 ```sh
 adb devices
+```
+
+### 上传本地脚本
+
+```sh
 adb push counter.lua /miniapp/counter.lua
 ```
 
 上传成功后脚本立即运行，替换当前应用。重新上传会重新初始化脚本。
-目标文件名用于区分应用及其存档；源码不因上传而持久化，重启后需重新上传。
+目标路径格式为 `/miniapp/<id>.lua`，其中 `<id>` 使用 1–121 个英文字母、数字、
+连字符或下划线。相同目标路径对应同一个本地调试应用及其设备端存档。
+源码仅保存在设备内存中，重启后需重新上传；通过 `storage` 保存的数据
+遵循[存档接口](api/storage.md)的持久化和过期规则。
 
-从支持源码拉取的设备取得当前运行脚本：
+### 修改设备上正在运行的应用
 
-```sh
-adb pull /miniapp/miniapp.lua ./device-app.lua
-```
+Mini 固件 3.0.2 及以上支持通过 ADB 拉取当前应用的 Lua 源码。
 
-该路径返回当前应用的源码快照。没有应用运行时拉取失败。
+1. 在设备上打开要修改的应用，并保持应用运行。
+2. 将源码拉取到电脑：
+
+   ```sh
+   adb pull /miniapp/miniapp.lua ./device-app.lua
+   ```
+
+3. 在模拟器中打开 `device-app.lua`，用 VS Code 等编辑器修改同一文件。
+   保存后模拟器自动重载，可检查画面、按键和运行结果。
+4. 验证后将修改后的脚本传回设备：
+
+   ```sh
+   adb push ./device-app.lua /miniapp/device-app.lua
+   ```
+
+上传成功后设备立即运行修改后的脚本。后续修改可继续上传到同一路径。
+
+拉取路径固定为 `/miniapp/miniapp.lua`，与原应用名称及上传时的文件名无关。
+它返回拉取开始时的源码快照；没有应用运行时会失败。
+请使用尚未存在的本地文件名保存，避免覆盖已有修改。
+
+拉取内容只有 Lua 源码，不包含运行进度或存档。
+回传时按目标文件名识别本地调试应用：上例的应用 ID 为 `local:device-app`。
+只有原应用也使用同一 ID 时，才会使用同一份设备端存档；
+模拟器中的存档也不会随源码上传。
 
 ## 接下来
 

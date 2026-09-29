@@ -25,10 +25,21 @@
 包内附有 `examples/` 和完整 API 文档，无需安装 Rust。
 Linux 需要图形桌面与 Vulkan 驱动；安装要求见[模拟器使用](docs/simulator.md)。
 
-### 2. 打开示例并修改
+### 2. 打开示例或设备上的应用
 
 在模拟器中打开 `examples/counter.lua`，点击画面后按空格键增加计数。
 用 VS Code 等编辑器修改同一文件，保存后模拟器自动重载。
+
+也可以取出设备上正在运行的应用继续修改。Mini 固件 3.0.2 及以上支持：
+
+```sh
+adb pull /miniapp/miniapp.lua ./device-app.lua
+```
+
+在模拟器中打开拉取的 `device-app.lua`，编辑、验证后再上传设备。
+ADB 安装和完整操作见[修改设备上的应用](docs/getting-started.md#修改设备上正在运行的应用)。
+
+下面是一个简单的计数器示例：
 
 ```lua
 local count = 0
